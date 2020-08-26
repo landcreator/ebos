@@ -294,24 +294,20 @@
 
    TIME_END=$(( $(date -u +%s) - ${TIME_BEGIN} ))
 
-   printf "\n\n${bldred}\t ______   _______  _______  _______  _______  _______  _______ \n"
-   printf "\t(  ___ \ (  ___  )(  ____ \(  ____ \(  ___  )(  ____ )(  ____ \ \n"
-   printf "\t| (   ) )| (   ) || (    \/| (    \/| (   ) || (    )|| (    \/\n"
-   printf "\t| (__/ / | |   | || (_____ | |      | |   | || (____)|| (__    \n"
-   printf "\t|  __ (  | |   | |(_____  )| |      | |   | ||     __)|  __)   \n"
-   printf "\t| (  \ \ | |   | |      ) || |      | |   | || (\ (   | (      \n"
-   printf "\t| )___) )| (___) |/\____) || (____/\| (___) || ) \ \__| (____/\ \n"
-   printf "\t|/ \___/ (_______)\_______)(_______/(_______)|/   \__/(_______/\n\n${txtrst}"
+   # generated at http://patorjk.com/software/taag Font Name: Big Money-se
+   printf "\n\n${bldred}\t "
+   printf    '________  _______    ______    ______   \n'
+   printf '\t|        \|       \  /      \  /      \  \n'
+   printf '\t| $$$$$$$$| $$$$$$$\|  $$$$$$\|  $$$$$$\ \n'
+   printf '\t| $$__    | $$__/ $$| $$  | $$| $$___\$$ \n'
+   printf '\t| $$  \   | $$    $$| $$  | $$ \$$    \  \n'
+   printf '\t| $$$$$   | $$$$$$$\| $$  | $$ _\$$$$$$\ \n'
+   printf '\t| $$_____ | $$__/ $$| $$__/ $$|  \__| $$ \n'
+   printf '\t| $$     \| $$    $$ \$$    $$ \$$    $$ \n'
+   printf '\t \$$$$$$$$ \$$$$$$$   \$$$$$$   \$$$$$$  \n'
+   printf "${txtrst}"
 
    printf "\\n\\tBOSCore has been successfully built. %02d:%02d:%02d\\n\\n" $(($TIME_END/3600)) $(($TIME_END%3600/60)) $(($TIME_END%60))
    printf "\\tTo verify your installation run the following commands:\\n"
 
    print_instructions
-
-   printf "\\tFor more information:\\n"
-   printf "\\tBOSCore website: https://boscore.io\\n"
-   printf "\\tBOSCore Telegram channel @ https://t.me/BOSCoreProject\\n"
-   printf "\\tBOSCore wiki: https://github.com/boscore/bos/wiki\\n"
-   printf "\\tEOSIO resources: https://eos.io/resources/\\n"
-   printf "\\tEOSIO Stack Exchange: https://eosio.stackexchange.com\\n"
-   printf "\\tEOSIO wiki: https://github.com/EOSIO/eos/wiki\\n\\n\\n"
