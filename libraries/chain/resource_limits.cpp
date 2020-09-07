@@ -297,7 +297,6 @@ bool resource_limits_manager::set_account_limits( const account_name& account, i
 
 void resource_limits_manager::get_account_limits( const account_name& account, int64_t& ram_bytes, int64_t& net_weight, int64_t& cpu_weight, bool raw ) const {
    const auto* pending_buo = _db.find<resource_limits_object,by_owner>( boost::make_tuple(true, account) );
-   const auto& gmr = _db.get<gmr_config_object>().res_parameters;       // *bos*
    if (pending_buo) {
       ram_bytes  = pending_buo->ram_bytes;
       net_weight = pending_buo->net_weight;
@@ -307,13 +306,6 @@ void resource_limits_manager::get_account_limits( const account_name& account, i
       ram_bytes  = buo.ram_bytes;
       net_weight = buo.net_weight;
       cpu_weight = buo.cpu_weight;
-   }
-
-   // *bos*
-   const int64_t ONEKM = 1024;
-   if (!raw && ram_bytes >= ONEKM)
-   {
-      ram_bytes += gmr.ram_byte;
    }
 }
 
