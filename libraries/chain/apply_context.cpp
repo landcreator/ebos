@@ -90,12 +90,12 @@ void apply_context::exec_one()
             } catch( const wasm_exit& ) {}
          }
 
-         if ( act->name == N( setcode ) ){
-             try {
-                auto system_account = &db.get<account_metadata_object,by_name>( config::system_account_name );
-                control.get_wasm_interface().apply( system_account->code_hash, system_account->vm_type, system_account->vm_version, *this );
-             } catch( const wasm_exit& ) {}
-         }
+//         if ( act->name == N( setcode ) ){
+//             try {
+//                auto system_account = &db.get<account_metadata_object,by_name>( config::system_account_name );
+//                control.get_wasm_interface().apply( system_account->code_hash, system_account->vm_type, system_account->vm_version, *this );
+//             } catch( const wasm_exit& ) {}
+//         }
 
       } FC_RETHROW_EXCEPTIONS( warn, "pending console output: ${console}", ("console", _pending_console_output) )
    } catch( fc::exception& e ) {
