@@ -1,3 +1,7 @@
+/**
+ *  @file
+ *  @copyright defined in eos/LICENSE
+ */
 #pragma once
 
 #include <boost/filesystem.hpp>
@@ -47,8 +51,8 @@ class state_history_log {
    const char* const    name = "";
    std::string          log_filename;
    std::string          index_filename;
-   std::fstream            log;
-   std::fstream            index;
+   std::fstream         log;
+   std::fstream         index;
    uint32_t             _begin_block = 0;
    uint32_t             _end_block   = 0;
    chain::block_id_type last_block_id;
@@ -105,10 +109,10 @@ class state_history_log {
       if (block_num < _end_block)
          truncate(block_num);
       log.seekg(0, std::ios_base::end);
-      uint64_t pos = log.tellp();
+      uint64_t pos = log.tellg();
       write_header(header);
       write_payload(log);
-      uint64_t end = log.tellp();
+      uint64_t end = log.tellg();
       EOS_ASSERT(end == pos + state_history_log_header_serial_size + header.payload_size, chain::plugin_exception,
                  "wrote payload with incorrect size to ${name}.log", ("name", name));
       log.write((char*)&pos, sizeof(pos));
@@ -121,12 +125,12 @@ class state_history_log {
       last_block_id = header.block_id;
    }
 
-   // returns cfile positioned at payload
+   // returns stream positioned at payload
    std::fstream& get_entry(uint32_t block_num, state_history_log_header& header) {
       EOS_ASSERT(block_num >= _begin_block && block_num < _end_block, chain::plugin_exception,
                  "read non-existing block in ${name}.log", ("name", name));
       log.seekg(get_pos(block_num));
-      log.read((char*)&header, sizeof(header));
+      read_header(header);
       return log;
    }
 
@@ -191,14 +195,14 @@ class state_history_log {
       }
       log.flush();
       boost::filesystem::resize_file(log_filename, pos);
-      log.flush();
+      log.sync();
       EOS_ASSERT(get_last_block(pos), chain::plugin_exception, "recover ${name}.log failed", ("name", name));
    }
 
    void open_log() {
       log.open(log_filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
       log.seekg(0, std::ios_base::end);
-      uint64_t size = log.tellp();
+      uint64_t size = log.tellg();
       if (size >= state_history_log_header_serial_size) {
          state_history_log_header header;
          log.seekg(0);
@@ -220,14 +224,14 @@ class state_history_log {
    void open_index() {
       index.open(index_filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app);
       index.seekg(0, std::ios_base::end);
-	  if (index.tellp() == (static_cast<int>(_end_block) - _begin_block) * sizeof(uint64_t))
-	      return;
-	  ilog("Regenerate ${name}.index", ("name", name));
-	  index.close();
-	  index.open( "w+b" ); // std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc
+      if (index.tellg() == (static_cast<int>(_end_block) - _begin_block) * sizeof(uint64_t))
+         return;
+      ilog("Regenerate ${name}.index", ("name", name));
+      index.close();
+      index.open(index_filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 
       log.seekg(0, std::ios_base::end);
-      uint64_t size      = log.tellp();
+      uint64_t size      = log.tellg();
       uint64_t pos       = 0;
       uint32_t num_found = 0;
       while (pos < size) {
@@ -283,8 +287,8 @@ class state_history_log {
          boost::filesystem::resize_file(index_filename, (block_num - _begin_block) * sizeof(uint64_t));
          _end_block = block_num;
       }
-      log.flush();
-      index.flush();
+      log.sync();
+      index.sync();
       ilog("fork or replay: removed ${n} blocks from ${name}.log", ("n", num_removed)("name", name));
    }
 }; // state_history_log

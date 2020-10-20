@@ -99,7 +99,7 @@ bool include_delta(const eosio::chain::resource_limits::resource_limits_state_ob
 bool include_delta(const eosio::chain::account_metadata_object& old,
                    const eosio::chain::account_metadata_object& curr) {
    return                                               //
-       old.name != curr.name ||                         //
+       old.name.value != curr.name.value ||             //
        old.is_privileged() != curr.is_privileged() ||   //
        old.last_code_update != curr.last_code_update || //
        old.vm_type != curr.vm_type ||                   //
@@ -112,9 +112,7 @@ bool include_delta(const eosio::chain::code_object& old, const eosio::chain::cod
 }
 
 bool include_delta(const eosio::chain::protocol_state_object& old, const eosio::chain::protocol_state_object& curr) {
-//   return old.activated_protocol_features != curr.activated_protocol_features;
-/// TODO
-    return true;
+   return old.activated_protocol_features != curr.activated_protocol_features;
 }
 
 struct state_history_plugin_impl : std::enable_shared_from_this<state_history_plugin_impl> {
@@ -147,7 +145,7 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
    void get_block(uint32_t block_num, fc::optional<bytes>& result) {
       chain::signed_block_ptr p;
       try {
-         p = chain_plug->chain().fetch_block_by_number_state_history(block_num);
+         p = chain_plug->chain().fetch_block_by_number(block_num);
       } catch (...) {
          return;
       }
@@ -161,7 +159,7 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
       if (chain_state_log && block_num >= chain_state_log->begin_block() && block_num < chain_state_log->end_block())
          return chain_state_log->get_block_id(block_num);
       try {
-         auto block = chain_plug->chain().fetch_block_by_number_state_history(block_num);
+         auto block = chain_plug->chain().fetch_block_by_number(block_num);
          if (block)
             return block->id();
       } catch (...) {
@@ -279,14 +277,18 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
          send_update();
       }
 
-      void send_update(get_blocks_result_v0 result) {
-         need_to_send_update = true;
-         if (!send_queue.empty() || !current_request || !current_request->max_messages_in_flight)
+      void send_update(bool changed = false) {
+         if (changed)
+            need_to_send_update = true;
+         if (!send_queue.empty() || !need_to_send_update || !current_request ||
+             !current_request->max_messages_in_flight)
             return;
-         auto& chain = plugin->chain_plug->chain();
+         auto&                chain = plugin->chain_plug->chain();
+         get_blocks_result_v0 result;
+         result.head              = {chain.head_block_num(), chain.head_block_id()};
          result.last_irreversible = {chain.last_irreversible_block_num(), chain.last_irreversible_block_id()};
          uint32_t current =
-               current_request->irreversible_only ? result.last_irreversible.block_num : result.head.block_num;
+             current_request->irreversible_only ? result.last_irreversible.block_num : result.head.block_num;
          if (current_request->start_block_num <= current &&
              current_request->start_block_num < current_request->end_block_num) {
             auto block_id = plugin->get_block_id(current_request->start_block_num);
@@ -310,27 +312,6 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
                                current_request->start_block_num < current_request->end_block_num;
       }
 
-      void send_update(const block_state_ptr& block_state) {
-         need_to_send_update = true;
-         if (!send_queue.empty() || !current_request || !current_request->max_messages_in_flight)
-            return;
-         get_blocks_result_v0 result;
-         result.head = {block_state->block_num, block_state->id};
-         send_update(std::move(result));
-      }
-
-      void send_update(bool changed = false) {
-         if (changed)
-            need_to_send_update = true;
-         if (!send_queue.empty() || !need_to_send_update || !current_request ||
-             !current_request->max_messages_in_flight)
-            return;
-         auto& chain = plugin->chain_plug->chain();
-         get_blocks_result_v0 result;
-         result.head = {chain.head_block_num(), chain.head_block_id()};
-         send_update(std::move(result));
-      }
-
       template <typename F>
       void catch_and_close(F f) {
          try {
@@ -349,11 +330,11 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
 
       template <typename F>
       void callback(boost::system::error_code ec, const char* what, F f) {
-         if (plugin->stopping)
-            return;
-         if (ec)
-            return on_fail(ec, what);
-         catch_and_close(f);
+            if( plugin->stopping )
+               return;
+            if( ec )
+               return on_fail( ec, what );
+            catch_and_close( f );
       }
 
       void on_fail(boost::system::error_code ec, const char* what) {
@@ -446,7 +427,7 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
          if (p) {
             if (p->current_request && block_state->block_num < p->current_request->start_block_num)
                p->current_request->start_block_num = block_state->block_num;
-            p->send_update(block_state);
+            p->send_update(true);
          }
       }
    }
@@ -548,7 +529,7 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
          }
       };
 
-      process_table("account", db.get_index<account_index2>(), pack_row);
+      process_table("account", db.get_index<account_index>(), pack_row);
       process_table("account_metadata", db.get_index<account_metadata_index>(), pack_row);
       process_table("code", db.get_index<code_index>(), pack_row);
 

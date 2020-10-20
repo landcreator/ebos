@@ -41,9 +41,9 @@ namespace eosio::chain {
 
    /// Immutable except for fc::from_variant.
    struct name {
-   private:
-      uint64_t value = 0;
 
+      uint64_t value = 0;
+   private:
       friend struct fc::reflector<name>;
       friend void fc::from_variant(const fc::variant& v, eosio::chain::name& check);
 
